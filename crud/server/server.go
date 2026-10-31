@@ -93,7 +93,7 @@ func BuscarUsuarios(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Erro ao converter usuários para JSON!"))
 		return
 	}
-	
+
 }
 
 // BuscarUsuario efetua a busca dos dados de um usuário em específico no MySQL
@@ -131,5 +131,53 @@ func BuscarUsuario(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Erro ao converter usuário para JSON!"))
 		return
 	}
+
+}
+
+// AtualizarUsuario efetua a atualização dos dados de um usuário específico no MySQL
+func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
+	parametros := mux.Vars(r)
+	ID, erro := strconv.ParseUint(parametros["id"], 10, 32)
+	if erro != nil {
+		w.Write([]byte("Erro ao obter parâmetros!"))
+		return
+	}
+
+	corpoRequisicao, erro := io.ReadAll(r.Body)
+	if erro != nil {
+		w.Write([]byte("Erro ao ler o corpo da requisição!"))
+		return
+	}
+
+	var usuario usuario
+	if erro := json.Unmarshal(corpoRequisicao, &usuario); erro != nil {
+		w.Write([]byte("Erro ao converter usuário para struct!"))
+		return
+	}
+
+	db, erro := bd.Conectar()
+	if erro != nil {
+		w.Write([]byte("Erro ao conectar com o banco de dados!"))
+		return
+	}
+	defer db.Close()
+
+	stmt, erro := db.Prepare("update usuarios set nome = ?, email = ? where id = ?")
+	if erro != nil {
+		w.Write([]byte("Erro ao preparar statement!"))
+		return
+	}
+	defer stmt.Close()
+
+	if _, erro := stmt.Exec(usuario.Nome, usuario.Email, ID); erro != nil {
+		w.Write([]byte("Erro ao atualizar o usuário!"))
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// DeletarUsuario efetua a remoção dos dados de um usuário específico no MySQL
+func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
 	
 }
