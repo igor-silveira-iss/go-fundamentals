@@ -179,5 +179,31 @@ func AtualizarUsuario(w http.ResponseWriter, r *http.Request) {
 
 // DeletarUsuario efetua a remoção dos dados de um usuário específico no MySQL
 func DeletarUsuario(w http.ResponseWriter, r *http.Request) {
-	
+	parametros := mux.Vars(r)
+	ID, erro := strconv.ParseUint(parametros["id"], 10, 32)
+	if erro != nil {
+		w.Write([]byte("Erro ao converter o parâmetro para inteiro"))
+		return
+	}
+
+	db, erro := bd.Conectar()
+	if erro != nil {
+		w.Write([]byte("Erro ao conectar com o banco de dados"))
+		return
+	}
+	defer db.Close()
+
+	stmt, erro := db.Prepare("delete from usuarios where id = ?;")
+	if erro != nil {
+		w.Write([]byte("Erro ao preparar statement"))
+		return
+	}
+	defer stmt.Close()
+
+	if _, erro := stmt.Exec(ID); erro != nil {
+		w.Write([]byte("Erro ao deletar usuário"))
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
